@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Financiero Avanzado</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #1e3a5f;
+            --secondary: #3498db;
+            --accent: #2ecc71;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --gray: #95a5a6;
+            --finance: #9b59b6;
+            --macro: #e67e22;
+            --ml: #16a085;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0d1b2a, #1b263b);
+            color: var(--light);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+        }
+        
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: inline-block;
+        }
+        
+        header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            max-width: 900px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .chat-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 150px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chat-header {
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .chat-header h2 {
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chat-header h2 i {
+            color: var(--accent);
+        }
+        
+        .chat-modes {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .mode-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--light);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .mode-btn.active {
+            background: var(--accent);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 15px;
+            border-radius: 15px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background: rgba(52, 152, 219, 0.2);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot-message {
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid rgba(46, 204, 113, 0.25);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .finance-response {
+            background: rgba(155, 89, 182, 0.15);
+            border: 1px solid rgba(155, 89, 182, 0.25);
+        }
+        
+        .macro-response {
+            background: rgba(230, 126, 34, 0.15);
+            border: 1px solid rgba(230, 126, 34, 0.25);
+        }
+        
+        .ml-response {
+            background: rgba(22, 160, 133, 0.15);
+            border: 1px solid rgba(22, 160, 133, 0.25);
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .user-message .message-header {
+            color: var(--secondary);
+        }
+        
+        .bot-message .message-header {
+            color: var(--accent);
+        }
+        
+        .finance-response .message-header {
+            color: var(--finance);
+        }
+        
+        .macro-response .message-header {
+            color: var(--macro);
+        }
+        
+        .ml-response .message-header {
+            color: var(--ml);
+        }
+        
+        .message-content {
+            line-height: 1.5;
+        }
+        
+        .message-content pre {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .message-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        .message-content th {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px 10px;
+            text-align: left;
+            color: var(--accent);
+        }
+        
+        .message-content td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .input-container {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-container input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 30px;
+            border: none;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .input-container input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 2px var(--secondary);
+        }
+        
+        .input-container button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .input-container button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+        
+        .input-container button:active {
+            transform: scale(0.95);
+        }
+        
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .examples h3 {
+            color: var(--accent);
+        }
+        
+        .features h3 {
+            color: var(--finance);
+        }
+        
+        .data-display h3 {
+            color: var(--macro);
+        }
+        
+        .ml-results h3 {
+            color: var(--ml);
+        }
+        
+        .card h3 i {
+            font-size: 1.3rem;
+        }
+        
+        .examples ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .examples li {
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .examples li:hover {
+            background: rgba(52, 152, 219, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .examples li:active {
+            transform: scale(0.98);
+        }
+        
+        .features ul {
+            list-style: none;
+            padding-left: 10px;
+        }
+        
+        .features li {
+            padding: 8px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .features li i {
+            color: var(--finance);
+            margin-top: 4px;
+        }
+        
+        .data-display {
+            flex: 1;
+        }
+        
+        .chart-container {
+            height: 250px;
+            margin-top: 15px;
+        }
+        
+        .macro-data {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .macro-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .macro-item .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .inflation .value {
+            color: #e74c3c;
+        }
+        
+        .gdp .value {
+            color: #3498db;
+        }
+        
+        .unemployment .value {
+            color: #f39c12;
+        }
+        
+        .score .value {
+            color: #2ecc71;
+        }
+        
+        .macro-item .label {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 15px;
+            align-self: flex-start;
+        }
+        
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin: 0 3px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+        
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .suggestion-chip {
+            background: rgba(52, 152, 219, 0.2);
+            color: var(--secondary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .suggestion-chip:hover {
+            background: rgba(52, 152, 219, 0.3);
+        }
+        
+        .finance-data {
+            display: none;
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .finance-data table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .finance-data th, .finance-data td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .finance-data th {
+            color: var(--accent);
+        }
+        
+        .ml-results {
+            display: none;
+        }
+        
+        .ml-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .metric-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .auc .value {
+            color: #3498db;
+        }
+        
+        .accuracy .value {
+            color: #2ecc71;
+        }
+        
+        .metric-card .label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            text-align: center;
+        }
+        
+        .confusion-matrix {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .matrix-cell {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+        
+        .matrix-header {
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .prophet-img {
+            width: 100%;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        @media (max-width: 1100px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                grid-row: 2;
+            }
+            
+            .chat-container {
+                height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> Chatbot Financiero Avanzado</h1>
+            <p>Plataforma integral para análisis financieros, predicciones de mercado y evaluación macroeconómica usando IA y modelos avanzados (XGBoost, Prophet)</p>
+        </header>
+        
+        <main class="chat-container">
+            <div class="chat-header">
+                <h2><i class="fas fa-comments"></i> Asistente Financiero Inteligente</h2>
+                <div class="chat-modes">
+                    <button class="mode-btn active" data-mode="finance">Finanzas</button>
+                    <button class="mode-btn" data-mode="macro">Macro</button>
+                    <button class="mode-btn" data-mode="ml">ML</button>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot-message">
+                    <div class="message-header">
+                        <i class="fas fa-robot"></i> Asistente Financiero
+                    </div>
+                    <div class="message-content">
+                        <p>¡Bienvenido al sistema de análisis financiero avanzado!</p>
+                        <p>Puedo ayudarte con:</p>
+                        <ul>
+                            <li><strong>Datos financieros históricos</strong> de cualquier empresa</li>
+                            <li><strong>Análisis macroeconómicos</strong> de países</li>
+                            <li><strong>Predicciones</strong> usando modelos de machine learning</li>
+                            <li><strong>Evaluación de tendencias</strong> con Prophet</li>
+                            <li><strong>Clasificación de señales</strong> con XGBoost</li>
+                        </ul>
+                        <p>¿Sobre qué empresa o indicador te gustaría consultar hoy?</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            
+            <div class="input-container">
+                <input type="text" id="user-input" placeholder="Escribe tu mensaje (ej: 'Dame datos de Microsoft de los últimos 3 meses')">
+                <button id="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </main>
+        
+        <aside class="sidebar">
+            <div class="card examples">
+                <h3><i class="fas fa-lightbulb"></i> Ejemplos de consultas</h3>
+                <ul>
+                    <li onclick="useExample(this)">Datos de Microsoft de los últimos 3 meses</li>
+                    <li onclick="useExample(this)">Precios de Apple del último año</li>
+                    <li onclick="useExample(this)">Análisis macroeconómico de Estados Unidos</li>
+                    <li onclick="useExample(this)">Predicción de tendencia para acciones de Amazon</li>
+                    <li onclick="useExample(this)">Entrena XGBoost para clasificación de Tesla</li>
+                    <li onclick="useExample(this)">Pronostica con Prophet para Google 12 meses</li>
+                </ul>
+                
+                <div class="suggestions">
+                    <div class="suggestion-chip" onclick="useSuggestion(this)">MSFT</div>
+                    <div class="suggestion-chip" onclick="useSuggestion(this)">AAPL</div>
+                    <div class="suggestion-chip" onclick="useSuggestion(this)">Inflación</div>
+                    <div class="suggestion-chip" onclick="useSuggestion(this)">XGBoost</div>
+                    <div class="suggestion-chip" onclick="useSuggestion(this)">Prophet</div>
+                </div>
+            </div>
+            
+            <div class="card features">
+                <h3><i class="fas fa-star"></i> Características Avanzadas</h3>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Datos en tiempo real de Yahoo Finance</li>
+                    <li><i class="fas fa-check-circle"></i> Análisis macroeconómico con Banco Mundial</li>
+                    <li><i class="fas fa-check-circle"></i> Imputación inteligente de datos faltantes</li>
+                    <li><i class="fas fa-check-circle"></i> Modelo Gemini IA para interpretación</li>
+                    <li><i class="fas fa-check-circle"></i> Clasificación con XGBoost</li>
+                    <li><i class="fas fa-check-circle"></i> Predicciones con Prophet</li>
+                    <li><i class="fas fa-check-circle"></i> Evaluación macro con score ponderado</li>
+                    <li><i class="fas fa-check-circle"></i> Visualización de datos financieros</li>
+                </ul>
+            </div>
+            
+            <div class="card data-display">
+                <h3><i class="fas fa-chart-line"></i> Visualización de Datos</h3>
+                <div class="chart-container">
+                    <canvas id="financial-chart"></canvas>
+                </div>
+                
+                <div class="macro-data">
+                    <div class="macro-item inflation">
+                        <div class="label">Inflación</div>
+                        <div class="value">2.5%</div>
+                        <div class="change">+0.2%</div>
+                    </div>
+                    <div class="macro-item gdp">
+                        <div class="label">Crecimiento PIB</div>
+                        <div class="value">3.1%</div>
+                        <div class="change">+0.4%</div>
+                    </div>
+                    <div class="macro-item unemployment">
+                        <div class="label">Desempleo</div>
+                        <div class="value">4.2%</div>
+                        <div class="change">-0.1%</div>
+                    </div>
+                    <div class="macro-item score">
+                        <div class="label">Score Macro</div>
+                        <div class="value">0.82</div>
+                        <div class="change">Estable</div>
+                    </div>
+                </div>
+                
+                <div class="finance-data" id="finance-data">
+                    <h4>Datos Financieros</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Apertura</th>
+                                <th>Cierre</th>
+                                <th>Máximo</th>
+                                <th>Mínimo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Datos dinámicos se insertarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card ml-results" id="ml-results">
+                <h3><i class="fas fa-brain"></i> Resultados de Machine Learning</h3>
+                
+                <div class="ml-metrics">
+                    <div class="metric-card auc">
+                        <div class="label">AUC Score</div>
+                        <div class="value">0.92</div>
+                    </div>
+                    <div class="metric-card accuracy">
+                        <div class="label">Accuracy</div>
+                        <div class="value">87.5%</div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4>Matriz de Confusión</h4>
+                    <div class="confusion-matrix">
+                        <div class="matrix-cell matrix-header"></div>
+                        <div class="matrix-cell matrix-header">Predicción: 0</div>
+                        <div class="matrix-cell matrix-header">Predicción: 1</div>
+                        
+                        <div class="matrix-cell matrix-header">Real: 0</div>
+                        <div class="matrix-cell">142</div>
+                        <div class="matrix-cell">18</div>
+                        
+                        <div class="matrix-cell matrix-header">Real: 1</div>
+                        <div class="matrix-cell">22</div>
+                        <div class="matrix-cell">158</div>
+                    </div>
+                </div>
+                
+                <img src="" alt="Prophet Forecast" class="prophet-img" id="prophet-forecast">
+                <img src="" alt="Prophet Components" class="prophet-img" id="prophet-components">
+            </div>
+        </aside>
+    </div>
+    
+    <script>
+        // Elementos del DOM
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const financeData = document.getElementById('finance-data');
+        const financeTable = financeData.querySelector('tbody');
+        const financialChart = document.getElementById('financial-chart');
+        const mlResults = document.getElementById('ml-results');
+        const prophetForecast = document.getElementById('prophet-forecast');
+        const prophetComponents = document.getElementById('prophet-components');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        
+        // Modo actual
+        let currentMode = 'finance';
+        
+        // Inicializar gráfico
+        const chart = new Chart(financialChart, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Precio de cierre',
+                    data: [],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 0
+                }, {
+                    label: 'Predicción',
+                    data: [],
+                    borderColor: '#e74c3c',
+                    borderDash: [5, 5],
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#ecf0f1'
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#bdc3c7',
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#bdc3c7',
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+        
+        // Función para agregar mensajes al chat
+        function addMessage(sender, text, type = 'bot') {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            
+            if (sender === 'user') {
+                messageDiv.classList.add('user-message');
+            } else {
+                messageDiv.classList.add('bot-message');
+                
+                if (type === 'finance') {
+                    messageDiv.classList.add('finance-response');
+                } else if (type === 'macro') {
+                    messageDiv.classList.add('macro-response');
+                } else if (type === 'ml') {
+                    messageDiv.classList.add('ml-response');
+                }
+            }
+            
+            const header = document.createElement('div');
+            header.classList.add('message-header');
+            
+            if (sender === 'user') {
+                header.innerHTML = '<i class="fas fa-user"></i> Tú';
+            } else {
+                if (type === 'finance') {
+                    header.innerHTML = '<i class="fas fa-chart-line"></i> Análisis Financiero';
+                } else if (type === 'macro') {
+                    header.innerHTML = '<i class="fas fa-globe-americas"></i> Análisis Macro';
+                } else if (type === 'ml') {
+                    header.innerHTML = '<i class="fas fa-brain"></i> Modelo ML';
+                } else {
+                    header.innerHTML = '<i class="fas fa-robot"></i> Asistente Financiero';
+                }
+            }
+            
+            const content = document.createElement('div');
+            content.classList.add('message-content');
+            content.innerHTML = text;
+            
+            messageDiv.appendChild(header);
+            messageDiv.appendChild(content);
+            chatMessages.appendChild(messageDiv);
+            
+            // Scroll al final del chat
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Función para mostrar/ocultar indicador de escritura
+        function showTyping(show) {
+            typingIndicator.style.display = show ? 'flex' : 'none';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Función para procesar comandos financieros
+        function processFinanceCommand(command) {
+            const companyMatch = command.match(/(Microsoft|Apple|Amazon|Google|Meta|Tesla|NVIDIA|Netflix)/i);
+            const company = companyMatch ? companyMatch[1] : 'Microsoft';
+            const symbol = getCompanySymbol(company);
+            
+            const monthsMatch = command.match(/(\d+)\s*mes/i);
+            const months = monthsMatch ? parseInt(monthsMatch[1]) : 3;
+            
+            // Simular obtención de datos
+            const data = generateMockFinancialData(months);
+            
+            // Actualizar gráfico
+            updateChart(data);
+            
+            // Actualizar tabla de datos
+            updateFinanceTable(data);
+            
+            // Actualizar datos macro
+            updateMacroData();
+            
+            // Mostrar sección de datos financieros
+            financeData.style.display = 'block';
+            
+            // Generar respuesta
+            return `
+                <strong>✅ Resultados para ${company} (${symbol}) - últimos ${months} meses</strong><br><br>
+                <table>
+                    <tr>
+                        <th>Período:</th>
+                        <td>${data.startDate} → ${data.endDate}</td>
+                    </tr>
+                    <tr>
+                        <th>Días analizados:</th>
+                        <td>${data.prices.length}</td>
+                    </tr>
+                    <tr>
+                        <th>Precio más alto:</th>
+                        <td>$${data.high.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <th>Precio más bajo:</th>
+                        <td>$${data.low.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <th>Cambio neto:</th>
+                        <td>${data.netChange > 0 ? '+' : ''}${data.netChange.toFixed(2)} (${data.percentChange > 0 ? '+' : ''}${data.percentChange.toFixed(2)}%)</td>
+                    </tr>
+                </table>
+                <br>
+                <strong>Archivos generados:</strong>
+                <ul>
+                    <li>precios_${slugify(symbol)}_${data.startDate.replace(/-/g, '')}_${data.endDate.replace(/-/g, '')}_raw.csv</li>
+                    <li>precios_${slugify(symbol)}_${data.startDate.replace(/-/g, '')}_${data.endDate.replace(/-/g, '')}_imputed.csv</li>
+                </ul>
+            `;
+        }
+        
+        // Función para procesar comandos macro
+        function processMacroCommand(command) {
+            const countryMatch = command.match(/(Estados Unidos|México|España|Argentina|Colombia|Brasil|Chile|Perú)/i);
+            const country = countryMatch ? countryMatch[1] : 'Estados Unidos';
+            
+            // Actualizar datos macro
+            updateMacroData();
+            
+            // Generar respuesta
+            return `
+                <strong>🌍 Análisis macroeconómico para ${country}</strong><br><br>
+                <table>
+                    <tr>
+                        <th>Indicador</th>
+                        <th>Valor</th>
+                        <th>Cambio</th>
+                        <th>Score</th>
+                    </tr>
+                    <tr>
+                        <td>Inflación</td>
+                        <td>2.5%</td>
+                        <td>+0.2%</td>
+                        <td>0.82</td>
+                    </tr>
+                    <tr>
+                        <td>Crecimiento PIB</td>
+                        <td>3.1%</td>
+                        <td>+0.4%</td>
+                        <td>0.78</td>
+                    </tr>
+                    <tr>
+                        <td>Desempleo</td>
+                        <td>4.2%</td>
+                        <td>-0.1%</td>
+                        <td>0.86</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><strong>Macro-score ponderado</strong></td>
+                        <td><strong>0.82</strong></td>
+                    </tr>
+                </table>
+                <br>
+                <strong>Vector MLP generado:</strong>
+                <pre>[2.5, 0.2, 3.1, 0.4, 4.2, -0.1, 0.82]</pre>
+            `;
+        }
+        
+        // Función para procesar comandos de ML
+        function processMLCommand(command) {
+            const companyMatch = command.match(/(Microsoft|Apple|Amazon|Google|Meta|Tesla|NVIDIA|Netflix)/i);
+            const company = companyMatch ? companyMatch[1] : 'Microsoft';
+            const symbol = getCompanySymbol(company);
+            
+            const modelMatch = command.match(/(xgboost|prophet|clasifica|pronostica)/i);
+            const model = modelMatch ? modelMatch[1].toLowerCase() : 'xgboost';
+            
+            // Mostrar resultados de ML
+            mlResults.style.display = 'block';
+            
+            if (model === 'prophet') {
+                prophetForecast.src = 'https://via.placeholder.com/600x400/333333/ffffff?text=Forecast+Graph';
+                prophetForecast.style.display = 'block';
+                prophetComponents.src = 'https://via.placeholder.com/600x400/333333/ffffff?text=Components+Graph';
+                prophetComponents.style.display = 'block';
+                
+                return `
+                    <strong>📈 Predicción Prophet para ${company} (${symbol})</strong><br><br>
+                    <p>Modelo Prophet entrenado con datos históricos de 5 años. Pronóstico generado para los próximos 12 meses.</p>
+                    <p><strong>Resultados clave:</strong></p>
+                    <ul>
+                        <li>Derivada promedio último trimestre: +0.42% diario</li>
+                        <li>Derivada promedio pronosticada: +0.38% diario</li>
+                        <li>Tendencia alcista con estacionalidad trimestral</li>
+                    </ul>
+                    <br>
+                    <p>Gráficos disponibles en el panel lateral →</p>
+                `;
+            } else {
+                prophetForecast.style.display = 'none';
+                prophetComponents.style.display = 'none';
+                
+                return `
+                    <strong>🧠 Modelo XGBoost para ${company} (${symbol})</strong><br><br>
+                    <p>Modelo entrenado con 5 años de datos históricos para clasificación de dirección del precio.</p>
+                    <p><strong>Métricas de rendimiento:</strong></p>
+                    <ul>
+                        <li>AUC Score: 0.92</li>
+                        <li>Accuracy: 87.5%</li>
+                        <li>Precisión: 85.2%</li>
+                        <li>Recall: 89.7%</li>
+                    </ul>
+                    <br>
+                    <p>Matriz de confusión y métricas disponibles en el panel lateral →</p>
+                `;
+            }
+        }
+        
+        // Función para obtener símbolo de empresa
+        function getCompanySymbol(company) {
+            const symbols = {
+                'Microsoft': 'MSFT',
+                'Apple': 'AAPL',
+                'Amazon': 'AMZN',
+                'Google': 'GOOGL',
+                'Meta': 'META',
+                'Tesla': 'TSLA',
+                'NVIDIA': 'NVDA',
+                'Netflix': 'NFLX'
+            };
+            return symbols[company] || 'MSFT';
+        }
+        
+        // Slugify para nombres de archivo
+        function slugify(s) {
+            return s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^-|-$)/g, '');
+        }
+        
+        // Generar datos financieros simulados
+        function generateMockFinancialData(months) {
+            const startPrice = 150 + Math.random() * 50;
+            const prices = [];
+            let currentPrice = startPrice;
+            let high = currentPrice;
+            let low = currentPrice;
+            
+            const days = months * 30;
+            const dates = [];
+            const today = new Date();
+            const startDate = new Date(today);
+            startDate.setMonth(today.getMonth() - months);
+            
+            for (let i = 0; i < days; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                dates.push(date.toISOString().split('T')[0]);
+                
+                // Generar movimiento de precio
+                const change = (Math.random() - 0.45) * 3;
+                currentPrice = Math.max(50, currentPrice + change);
+                
+                prices.push({
+                    date: date.toISOString().split('T')[0],
+                    open: currentPrice - Math.random() * 2,
+                    close: currentPrice,
+                    high: currentPrice + Math.random() * 3,
+                    low: currentPrice - Math.random() * 3,
+                    volume: Math.floor(5000000 + Math.random() * 10000000)
+                });
+                
+                // Actualizar máximos y mínimos
+                if (currentPrice > high) high = currentPrice;
+                if (currentPrice < low) low = currentPrice;
+            }
+            
+            const netChange = prices[prices.length - 1].close - prices[0].open;
+            const percentChange = (netChange / prices[0].open) * 100;
+            
+            return {
+                company: 'Microsoft',
+                symbol: 'MSFT',
+                startDate: dates[0],
+                endDate: dates[dates.length - 1],
+                prices: prices,
+                high: high,
+                low: low,
+                netChange: netChange,
+                percentChange: percentChange
+            };
+        }
+        
+        // Actualizar gráfico con nuevos datos
+        function updateChart(data) {
+            const labels = data.prices.map(p => p.date);
+            const closePrices = data.prices.map(p => p.close);
+            
+            // Generar datos de predicción (solo para demostración)
+            const forecastData = [];
+            const lastPrice = closePrices[closePrices.length - 1];
+            for (let i = 0; i < 30; i++) {
+                forecastData.push(lastPrice * (1 + (0.002 * i) + (Math.random() * 0.01 - 0.005)));
+            }
+            
+            chart.data.labels = [...labels, ...Array(30).fill('')];
+            chart.data.datasets[0].data = [...closePrices, ...Array(30).fill(null)];
+            chart.data.datasets[1].data = [...Array(closePrices.length).fill(null), ...forecastData];
+            chart.data.datasets[0].label = `${data.company} (${data.symbol}) - Precio de cierre`;
+            chart.update();
+        }
+        
+        // Actualizar tabla de datos financieros
+        function updateFinanceTable(data) {
+            financeTable.innerHTML = '';
+            
+            // Mostrar solo 5 filas para ejemplo
+            const step = Math.max(1, Math.floor(data.prices.length / 5));
+            for (let i = 0; i < data.prices.length; i += step) {
+                if (i >= 5 * step) break;
+                
+                const price = data.prices[i];
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${price.date}</td>
+                    <td>$${price.open.toFixed(2)}</td>
+                    <td>$${price.close.toFixed(2)}</td>
+                    <td>$${price.high.toFixed(2)}</td>
+                    <td>$${price.low.toFixed(2)}</td>
+                `;
+                
+                financeTable.appendChild(row);
+            }
+        }
+        
+        // Actualizar datos macro
+        function updateMacroData() {
+            const inflation = 2.5 + (Math.random() - 0.5);
+            const gdp = 3.1 + (Math.random() - 0.5);
+            const unemployment = 4.2 + (Math.random() - 0.5);
+            const score = 0.75 + Math.random() * 0.25;
+            
+            document.querySelector('.inflation .value').textContent = inflation.toFixed(1) + '%';
+            document.querySelector('.gdp .value').textContent = gdp.toFixed(1) + '%';
+            document.querySelector('.unemployment .value').textContent = unemployment.toFixed(1) + '%';
+            document.querySelector('.score .value').textContent = score.toFixed(2);
+            
+            document.querySelector('.inflation .change').textContent = (inflation > 2.5 ? '+' : '') + (inflation - 2.5).toFixed(1) + '%';
+            document.querySelector('.gdp .change').textContent = (gdp > 3.1 ? '+' : '') + (gdp - 3.1).toFixed(1) + '%';
+            document.querySelector('.unemployment .change').textContent = (unemployment > 4.2 ? '+' : '') + (unemployment - 4.2).toFixed(1) + '%';
+        }
+        
+        // Función para usar ejemplos
+        function useExample(element) {
+            userInput.value = element.textContent;
+            userInput.focus();
+        }
+        
+        // Función para usar sugerencias
+        function useSuggestion(element) {
+            userInput.value = element.textContent;
+            userInput.focus();
+        }
+        
+        // Cambiar modo
+        function setMode(mode) {
+            currentMode = mode;
+            
+            // Actualizar botones activos
+            modeButtons.forEach(btn => {
+                if (btn.dataset.mode === mode) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+        
+        // Manejar envío de mensajes
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // Agregar mensaje del usuario
+            addMessage('user', message);
+            userInput.value = '';
+            
+            // Mostrar indicador de escritura
+            showTyping(true);
+            
+            // Procesar después de un retraso para simular tiempo de respuesta
+            setTimeout(() => {
+                showTyping(false);
+                
+                let response = '';
+                let responseType = 'bot';
+                
+                if (currentMode === 'finance' || message.toLowerCase().includes('datos') || 
+                    message.toLowerCase().includes('precios')) {
+                    
+                    response = processFinanceCommand(message);
+                    responseType = 'finance';
+                } 
+                else if (currentMode === 'macro' || message.toLowerCase().includes('macro') || 
+                         message.toLowerCase().includes('inflación') || 
+                         message.toLowerCase().includes('pib') || 
+                         message.toLowerCase().includes('desempleo')) {
+                    
+                    response = processMacroCommand(message);
+                    responseType = 'macro';
+                }
+                else if (currentMode === 'ml' || message.toLowerCase().includes('xgboost') || 
+                         message.toLowerCase().includes('prophet') || 
+                         message.toLowerCase().includes('modelo') || 
+                         message.toLowerCase().includes('entrena') || 
+                         message.toLowerCase().includes('pronostica')) {
+                    
+                    response = processMLCommand(message);
+                    responseType = 'ml';
+                }
+                else {
+                    // Respuesta genérica
+                    const responses = [
+                        `He analizado tu consulta sobre "${message}". Como asistente financiero avanzado, puedo proporcionarte análisis detallados de empresas, datos macroeconómicos y predicciones con modelos de ML. ¿Te gustaría que profundice en algún aspecto específico?`,
+                        `Interesante consulta sobre "${message}". Para darte una respuesta precisa, necesito más contexto. ¿Podrías especificar si buscas datos históricos, indicadores macro, o predicciones con modelos de machine learning?`,
+                        `Sobre "${message}", puedo ofrecerte un análisis completo que incluye datos financieros, indicadores clave y contexto macroeconómico. ¿Te interesaría ver un reporte detallado?`,
+                        `Entendido. Para "${message}", puedo generar un informe con:<br>- Datos históricos de precios<br>- Análisis de volatilidad<br>- Comparativa con el sector<br>- Indicadores macro relevantes<br>¿Quieres que proceda?`,
+                        `"${message}" es un tema relevante en el contexto económico actual. ¿Te gustaría que me centre en datos recientes, tendencias a largo plazo o un análisis con modelos predictivos?`
+                    ];
+                    
+                    response = responses[Math.floor(Math.random() * responses.length)];
+                }
+                
+                addMessage('bot', response, responseType);
+            }, 1500);
+        }
+        
+        // Event listeners
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        
+        modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setMode(btn.dataset.mode);
+            });
+        });
+        
+        // Inicializar con datos de ejemplo
+        setTimeout(() => {
+            const data = generateMockFinancialData(6);
+            updateChart(data);
+            updateFinanceTable(data);
+            updateMacroData();
+            financeData.style.display = 'block';
+        }, 1000);
+    </script>
+</body>
+</html>
